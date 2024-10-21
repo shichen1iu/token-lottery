@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    associated_token::AssociatedToken,
     metadata::{
         create_master_edition_v3, create_metadata_accounts_v3,
         mpl_token_metadata::types::{CollectionDetails, Creator, DataV2},
@@ -49,9 +48,9 @@ pub struct InitializeLottery<'info> {
         mut,
         seeds = [
             b"metadata",
-            b"edition",
             token_metadata_program.key().as_ref(),
             collection_mint.key().as_ref(),
+            b"edition",
         ],
         bump,
         seeds::program = token_metadata_program.key(),
@@ -59,7 +58,6 @@ pub struct InitializeLottery<'info> {
     /// CHECK: This is the master edition account for the collection mint,and it will be created andh checked by the token metadata program
     pub master_edition_account: UncheckedAccount<'info>,
     pub token_metadata_program: Program<'info, Metadata>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
