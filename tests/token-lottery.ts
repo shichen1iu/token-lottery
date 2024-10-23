@@ -3,6 +3,7 @@ import { Program } from "@coral-xyz/anchor";
 import * as sb from "@switchboard-xyz/on-demand";
 import { PublicKey } from "@solana/web3.js";
 import { TokenLottery } from "../target/types/token_lottery";
+import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 
 describe("token-lottery", async () => {
   const provider = anchor.AnchorProvider.env();
@@ -220,5 +221,58 @@ describe("token-lottery", async () => {
 
     console.log("--------------------------------");
     console.log("Reveal randomness transaction hash:", revealTxHash);
+  });
+
+  it("Is claiming a prize", async () => {
+    const tokenLotteryAddress = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("token_lottery")],
+      program.programId
+    )[0];
+    const lotteryConfig = await program.account.tokenLottery.fetch(
+      tokenLotteryAddress
+    );
+    console.log("Lottery winner", lotteryConfig.winner);
+    console.log("Lottery config", lotteryConfig);
+
+    const tokenAccounts =
+      await provider.connection.getParsedTokenAccountsByOwner(
+        wallet.publicKey,
+        { programId: Token_Program_ID }
+      );
+    tokenAccounts.value.forEach(async (account) => {
+      console.log("Token account mint", account.account.data.parsed.info.mint);
+      console.log("Token account address", account.pubkey.toBase58());
+    });
+
+    const winningMint = anchor.web3.PublicKey.findProgramAddressSync(
+      [new anchor.BN(lotteryConfig.winner).toArrayLike(Buffer, "le", 8)],
+      program.programId
+    )[0];
+    console.log("Winning mint", winningMint.toBase58());
+
+    const winningTokenAddress = getAssociatedTokenAddressSync(
+      winningMint,
+      wallet.publicKey
+    );
+    console.log("Winning token address", winningTokenAddress.toBase58());
+
+    const claimIx = await program.methods
+      .claimWinner()
+      .accounts({
+        tokenProgram: Token_Program_ID,
+      })
+      .instruction();
+
+    const blockhashContext = await provider.connection.getLatestBlockhash();
+
+    const ClaimWinnerTx = new anchor.web3.Transaction({
+      blockhash: blockhashContext.blockhash,
+      lastValidBlockHeight: blockhashContext.lastValidBlockHeight,
+      feePayer: wallet.payer.publicKey,
+    }).add(claimIx);
+
+    const ClaimWinnerTxHash = await provider.sendAndConfirm(ClaimWinnerTx);
+    console.log("--------------------------------");
+    console.log("Claim transaction hash:", ClaimWinnerTxHash);
   });
 });

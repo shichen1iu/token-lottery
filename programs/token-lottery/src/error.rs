@@ -14,4 +14,10 @@ pub enum ErrorCode {
     WinnerAlreadyChosen,
     #[msg("Randomness not resolved")]
     RandomnessNotResolved,
+    #[msg("Winner not chosen")]
+    WinnerNotChosen,
+    #[msg("Ticket not verified")]
+    TicketNotVerified,
+    #[msg("Incorrect ticket")]
+    IncorrectTicket,
 }

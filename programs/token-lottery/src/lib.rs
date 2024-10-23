@@ -34,4 +34,8 @@ pub mod token_lottery {
     pub fn reveal_winner(ctx: Context<RevealWinner>) -> Result<()> {
         process_reveal_winner(ctx)
     }
+
+    pub fn claim_winner(ctx: Context<ClaimWinner>) -> Result<()> {
+        process_claim_winner(ctx)
+    }
 }
