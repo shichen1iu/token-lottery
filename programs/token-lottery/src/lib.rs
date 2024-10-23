@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
+mod constants;
+mod error;
 mod instructions;
 mod state;
-mod error;
-mod constants;
 use instructions::*;
 declare_id!("ASPXV1Wuq6CJtPNWm5xpScsbj5UZXHdY2zJqfiHtfKJj");
 
@@ -25,5 +25,9 @@ pub mod token_lottery {
 
     pub fn buy_ticket(ctx: Context<BuyTicket>) -> Result<()> {
         process_buy_ticket(ctx)
+    }
+
+    pub fn commit_randomness(ctx: Context<CommitRandomness>) -> Result<()> {
+        process_commit_randomness(ctx)
     }
 }

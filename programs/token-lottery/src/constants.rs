@@ -7,4 +7,4 @@ pub const NAME: &str = "Token Lottery Ticket #";
 pub const SYMBOL: &str = "TLT";
 
 #[constant]
-pub const URI: &str = "https://github.com/shichen1iu/token-lottery/blob/main/test-uri.json";
+pub const URI: &str = "https://arweave.net/BDMfuYZjKua0jqErNiIF8b9Zw81dDduA4xcVoN6Asaw/collection_uri.json";
