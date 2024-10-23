@@ -34,10 +34,12 @@ describe("token-lottery", async () => {
   });
 
   it("init token lottery ", async () => {
+    const slot = await provider.connection.getSlot();
+
     const initializeConfigIx = await program.methods
       .initializeConfig(
         new anchor.BN(0),
-        new anchor.BN(1760025600), //结束时间:2025/10/10
+        new anchor.BN(slot + 10), //几乎是立马结束
         new anchor.BN(10_000)
       )
       .instruction();
@@ -124,11 +126,13 @@ describe("token-lottery", async () => {
     await buyTicket();
   });
 
-  it("commit randomness", async () => {
+  it("commit randomness and reveal winner", async () => {
     const sbQueue = new anchor.web3.PublicKey(
       "A43DyUGA7s8eXPxqEjJY6EBu1KKbNgfxF8h17VAHn13w"
     );
     const queueAccount = new sb.Queue(switchboardProgram, sbQueue);
+
+    const blockhashWithContext = await provider.connection.getLatestBlockhash();
 
     try {
       await queueAccount.loadData();
@@ -148,30 +152,21 @@ describe("token-lottery", async () => {
       ixs: [createRandomnessIx],
       payer: wallet.publicKey,
       signers: [wallet.payer, rngKp],
+      computeUnitPrice: 75_000,
+      computeUnitLimitMultiple: 1.3,
     });
+
+    // const createRandomnessTx = new anchor.web3.Transaction({
+    //   feePayer: wallet.publicKey,
+    //   blockhash: blockhashWithContext.blockhash,
+    //   lastValidBlockHeight: blockhashWithContext.lastValidBlockHeight,
+    // }).add(createRandomnessIx);
 
     const createRandomnessTxHash = await provider.sendAndConfirm(
       createRandomnessTx
     );
     console.log("--------------------------------");
     console.log("Create randomness transaction hash:", createRandomnessTxHash);
-
-    // let flag = false;
-    // while (!flag) {
-    //   try {
-    //     const confirmedRandomness =
-    //       await provider.connection.getSignatureStatus(createRandomnessTxHash);
-    //     const randomnessStatus = confirmedRandomness.value[0];
-    //     if (
-    //       randomnessStatus?.confirmations != null &&
-    //       randomnessStatus.confirmationStatus === "comfirmed"
-    //     ) {
-    //       flag = true;
-    //     }
-    //   } catch (error) {
-    //     console.log("error:", error);
-    //   }
-    // }
 
     const sbCommitIx = await randomness.commitIx(sbQueue);
 
@@ -182,20 +177,48 @@ describe("token-lottery", async () => {
       })
       .instruction();
 
-    const blockhashWithContext = await provider.connection.getLatestBlockhash();
+    const commitTx = await sb.asV0Tx({
+      connection: switchboardProgram.provider.connection,
+      ixs: [sbCommitIx, commitRandomnessIx],
+      payer: wallet.publicKey,
+      signers: [wallet.payer],
+      computeUnitPrice: 75_000,
+      computeUnitLimitMultiple: 1.3,
+    });
 
-    const commitRandomnessTx = new anchor.web3.Transaction({
+    const commitTxHash = await provider.sendAndConfirm(commitTx);
+
+    console.log("--------------------------------");
+    console.log("Commit randomness transaction hash:", commitTxHash);
+
+    const sbRevealIx = await randomness.revealIx();
+    const revealWinnerIx = await program.methods
+      .revealWinner()
+      .accounts({
+        randomnessAccount: randomness.pubkey,
+      })
+      .instruction();
+
+    // const revealTx = await sb.asV0Tx({
+    //   connection: switchboardProgram.provider.connection,
+    //   ixs: [sbRevealIx, revealWinnerIx],
+    //   payer: wallet.publicKey,
+    //   signers: [wallet.payer],
+    //   computeUnitPrice: 75_000,
+    //   computeUnitLimitMultiple: 1.3,
+    // });
+
+    const revealTx = new anchor.web3.Transaction({
       feePayer: wallet.publicKey,
       blockhash: blockhashWithContext.blockhash,
       lastValidBlockHeight: blockhashWithContext.lastValidBlockHeight,
-      })
-      .add(commitRandomnessIx)
-      .add(sbCommitIx);
+    })
+      .add(sbRevealIx)
+      .add(revealWinnerIx);
 
-    const commitRandomnessTxHash = await provider.sendAndConfirm(
-      commitRandomnessTx
-    );
+    const revealTxHash = await provider.sendAndConfirm(revealTx);
+
     console.log("--------------------------------");
-    console.log("Commit randomness transaction hash:", commitRandomnessTxHash);
+    console.log("Reveal randomness transaction hash:", revealTxHash);
   });
 });

@@ -30,4 +30,8 @@ pub mod token_lottery {
     pub fn commit_randomness(ctx: Context<CommitRandomness>) -> Result<()> {
         process_commit_randomness(ctx)
     }
+
+    pub fn reveal_winner(ctx: Context<RevealWinner>) -> Result<()> {
+        process_reveal_winner(ctx)
+    }
 }

@@ -8,4 +8,10 @@ pub enum ErrorCode {
     InvalidAuthority,
     #[msg("Randomness already revealed")]
     RandomnessAlreadyRevealed,
+    #[msg("Invalid randomness account")]
+    InvalidRandomnessAccount,
+    #[msg("Winner already chosen")]
+    WinnerAlreadyChosen,
+    #[msg("Randomness not resolved")]
+    RandomnessNotResolved,
 }

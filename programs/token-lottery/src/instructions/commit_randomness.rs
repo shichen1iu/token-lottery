@@ -21,9 +21,10 @@ pub struct CommitRandomness<'info> {
 pub fn process_commit_randomness(ctx: Context<CommitRandomness>) -> Result<()> {
     let clock = Clock::get()?;
     let token_lottery = &mut ctx.accounts.token_lottery;
-    if ctx.accounts.payer.key() != token_lottery.authority {
-        return Err(ErrorCode::InvalidAuthority.into());
-    }
+    require!(
+        ctx.accounts.payer.key() == token_lottery.authority,
+        ErrorCode::InvalidAuthority
+    );
 
     let randomness_data =
         RandomnessAccountData::parse(ctx.accounts.randomness_account.data.borrow()).unwrap();

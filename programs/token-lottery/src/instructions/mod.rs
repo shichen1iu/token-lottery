@@ -9,3 +9,9 @@ pub use buy_ticket::*;
 
 pub mod commit_randomness;
 pub use commit_randomness::*;
+
+pub mod reveal_winner;
+pub use reveal_winner::*;
+
+pub mod claim_winner;
+pub use claim_winner::*;
